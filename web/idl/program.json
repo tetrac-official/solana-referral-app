@@ -1,0 +1,224 @@
+{
+  "version": "0.1.0",
+  "name": "program",
+  "address": "DiAruQom5HzAzBYJER9jPUX6fqzKPdiwQ9v1g27nNzD3",
+  "metadata": {
+    "name": "program",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
+  "instructions": [
+    {
+      "name": "initialize",
+      "discriminator": [175, 175, 109, 31, 13, 152, 155, 237],
+      "accounts": [
+        { "name": "payer", "isMut": true, "isSigner": true, "writable": true, "signer": true },
+        {
+          "name": "tokenAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "pda": { "seeds": [{ "kind": "const", "value": [116, 111, 107, 101, 110, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121] }] }
+        },
+        { "name": "usdcMint", "isMut": false, "isSigner": false },
+        { "name": "programTokenAccount", "isMut": true, "isSigner": false, "writable": true },
+        { "name": "tokenProgram", "isMut": false, "isSigner": false, "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
+        { "name": "associatedTokenProgram", "isMut": false, "isSigner": false, "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" },
+        { "name": "systemProgram", "isMut": false, "isSigner": false, "address": "11111111111111111111111111111111" }
+      ],
+      "args": []
+    },
+    {
+      "name": "registerAffiliate",
+      "discriminator": [87, 121, 99, 184, 126, 63, 103, 217],
+      "accounts": [
+        { "name": "affiliate", "isMut": true, "isSigner": true, "writable": true, "signer": true },
+        {
+          "name": "affiliateConfig",
+          "isMut": true,
+          "isSigner": false,
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "const", "value": [97, 102, 102, 105, 108, 105, 97, 116, 101] },
+              { "kind": "account", "path": "affiliate" }
+            ]
+          }
+        },
+        { "name": "systemProgram", "isMut": false, "isSigner": false, "address": "11111111111111111111111111111111" }
+      ],
+      "args": []
+    },
+    {
+      "name": "promoteAffiliate",
+      "discriminator": [10, 129, 21, 38, 107, 251, 2, 188],
+      "accounts": [
+        { "name": "admin", "isMut": true, "isSigner": true, "writable": true, "signer": true },
+        { "name": "affiliateConfig", "isMut": true, "isSigner": false, "writable": true }
+      ],
+      "args": [
+        { "name": "newTier", "type": "u8" },
+        { "name": "newBps", "type": "u16" }
+      ]
+    },
+    {
+      "name": "receiveAndSplit",
+      "discriminator": [106, 58, 83, 192, 186, 60, 192, 136],
+      "accounts": [
+        { "name": "payer", "isMut": true, "isSigner": true, "writable": true, "signer": true },
+        {
+          "name": "tokenAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "pda": { "seeds": [{ "kind": "const", "value": [116, 111, 107, 101, 110, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121] }] }
+        },
+        { "name": "programTokenAccount", "isMut": true, "isSigner": false, "writable": true },
+        { "name": "merchantTokenAccount", "isMut": true, "isSigner": false, "writable": true },
+        { "name": "affiliateTokenAccount", "isMut": true, "isSigner": false, "writable": true, "isOptional": true, "optional": true },
+        { "name": "affiliateConfig", "isMut": true, "isSigner": false, "writable": true, "isOptional": true, "optional": true },
+        { "name": "usdcMint", "isMut": false, "isSigner": false },
+        { "name": "reference", "isMut": false, "isSigner": false },
+        {
+          "name": "referenceStorage",
+          "isMut": true,
+          "isSigner": false,
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "const", "value": [114, 101, 102, 101, 114, 101, 110, 99, 101] },
+              { "kind": "account", "path": "reference" }
+            ]
+          }
+        },
+        { "name": "tokenProgram", "isMut": false, "isSigner": false, "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
+        { "name": "systemProgram", "isMut": false, "isSigner": false, "address": "11111111111111111111111111111111" }
+      ],
+      "args": [
+        { "name": "memoData", "type": "string" },
+        { "name": "amount", "type": "u64" }
+      ]
+    },
+    {
+      "name": "receiveAndSplitSol",
+      "discriminator": [160, 160, 191, 91, 83, 139, 185, 68],
+      "accounts": [
+        { "name": "payer", "isMut": true, "isSigner": true, "writable": true, "signer": true },
+        {
+          "name": "tokenAuthority",
+          "isMut": true,
+          "isSigner": false,
+          "writable": true,
+          "pda": { "seeds": [{ "kind": "const", "value": [116, 111, 107, 101, 110, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121] }] }
+        },
+        { "name": "merchant", "isMut": true, "isSigner": false, "writable": true },
+        { "name": "affiliate", "isMut": true, "isSigner": false, "writable": true, "isOptional": true, "optional": true },
+        { "name": "affiliateConfig", "isMut": true, "isSigner": false, "writable": true, "isOptional": true, "optional": true },
+        { "name": "reference", "isMut": false, "isSigner": false },
+        {
+          "name": "referenceStorage",
+          "isMut": true,
+          "isSigner": false,
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "const", "value": [114, 101, 102, 101, 114, 101, 110, 99, 101] },
+              { "kind": "account", "path": "reference" }
+            ]
+          }
+        },
+        { "name": "systemProgram", "isMut": false, "isSigner": false, "address": "11111111111111111111111111111111" }
+      ],
+      "args": [
+        { "name": "memoData", "type": "string" },
+        { "name": "amount", "type": "u64" }
+      ]
+    },
+    {
+      "name": "sweep",
+      "discriminator": [40, 23, 234, 175, 14, 61, 154, 177],
+      "accounts": [
+        { "name": "admin", "isMut": true, "isSigner": true, "writable": true, "signer": true },
+        {
+          "name": "tokenAuthority",
+          "isMut": false,
+          "isSigner": false,
+          "pda": { "seeds": [{ "kind": "const", "value": [116, 111, 107, 101, 110, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121] }] }
+        },
+        { "name": "programTokenAccount", "isMut": true, "isSigner": false, "writable": true },
+        { "name": "destination", "isMut": true, "isSigner": false, "writable": true },
+        { "name": "usdcMint", "isMut": false, "isSigner": false },
+        { "name": "tokenProgram", "isMut": false, "isSigner": false, "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" }
+      ],
+      "args": []
+    },
+    {
+      "name": "sweepSol",
+      "discriminator": [48, 81, 27, 227, 28, 145, 224, 204],
+      "accounts": [
+        { "name": "admin", "isMut": true, "isSigner": true, "writable": true, "signer": true },
+        {
+          "name": "tokenAuthority",
+          "isMut": true,
+          "isSigner": false,
+          "writable": true,
+          "pda": { "seeds": [{ "kind": "const", "value": [116, 111, 107, 101, 110, 95, 97, 117, 116, 104, 111, 114, 105, 116, 121] }] }
+        },
+        { "name": "destination", "isMut": true, "isSigner": false, "writable": true },
+        { "name": "systemProgram", "isMut": false, "isSigner": false, "address": "11111111111111111111111111111111" }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "AffiliateConfig",
+      "discriminator": [59, 190, 66, 88, 43, 52, 139, 29]
+    },
+    {
+      "name": "ReferenceStorage",
+      "discriminator": [189, 127, 56, 251, 182, 61, 196, 77]
+    }
+  ],
+  "types": [
+    {
+      "name": "AffiliateConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "affiliate", "type": "pubkey" },
+          { "name": "commissionBps", "type": "u16" },
+          { "name": "tier", "type": "u8" },
+          { "name": "totalReferrals", "type": "u32" },
+          { "name": "totalVolume", "type": "u64" },
+          { "name": "createdAt", "type": "i64" },
+          { "name": "updatedAt", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "ReferenceStorage",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "merchantPubkey", "type": { "array": ["u8", 32] } },
+          { "name": "affiliatePubkey", "type": { "option": { "array": ["u8", 32] } } },
+          { "name": "amount", "type": "u64" },
+          { "name": "timestamp", "type": "i64" },
+          { "name": "reference", "type": { "array": ["u8", 32] } }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    { "code": 6000, "name": "ArithmeticOverflow", "msg": "Arithmetic overflow occurred" },
+    { "code": 6001, "name": "InvalidMemoFormat", "msg": "Invalid memo format: not valid JSON" },
+    { "code": 6002, "name": "MissingMerchantId", "msg": "Missing merchant_id in memo" },
+    { "code": 6003, "name": "InvalidMerchantPubkey", "msg": "Invalid merchant pubkey in memo" },
+    { "code": 6004, "name": "InvalidAffiliatePubkey", "msg": "Invalid affiliate pubkey in memo" },
+    { "code": 6005, "name": "MerchantMismatch", "msg": "Merchant token account owner does not match memo merchant_id" },
+    { "code": 6006, "name": "AffiliateMismatch", "msg": "Affiliate token account presence/owner does not match memo" },
+    { "code": 6007, "name": "InvalidAmount", "msg": "Amount must be greater than zero" },
+    { "code": 6008, "name": "AmountBelowMinimum", "msg": "Amount is below the minimum threshold" },
+    { "code": 6009, "name": "Unauthorized", "msg": "Only the admin can perform this action" },
+    { "code": 6010, "name": "CommissionTooHigh", "msg": "Commission cannot exceed 2000 bps (20%)" }
+  ]
+}
