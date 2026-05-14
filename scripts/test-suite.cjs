@@ -43,7 +43,7 @@ const {
 
 // ─── Config ────────────────────────────────────────────────────────────────
 const PROGRAM_ID = new PublicKey("DiAruQom5HzAzBYJER9jPUX6fqzKPdiwQ9v1g27nNzD3");
-const ADMIN = new PublicKey("BYNtxb7zMereaMrmMcWCQx3G6Y1KZspnMJbiuqoh9MrF");
+const ADMIN = new PublicKey("2v4XjdTjHK7qKEc8BkCeCWFrZmGSJv32ZGyv27zw3jc5");
 const USDC_MINT = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
 const USDC_DECIMALS = 6;
 const RPC_URL = "https://api.devnet.solana.com";

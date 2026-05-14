@@ -15,12 +15,12 @@ const MIN_USDC_AMOUNT: u64 = 1_000;
 const AUTO_PROMOTE_REFERRALS: u32 = 10; // Starter → Silver at 10 referrals
 
 /// Admin key — upgrade authority, gates promote + sweep.
-/// BYNtxb7zMereaMrmMcWCQx3G6Y1KZspnMJbiuqoh9MrF
+/// 2v4XjdTjHK7qKEc8BkCeCWFrZmGSJv32ZGyv27zw3jc5 (Ledger)
 const ADMIN: Pubkey = Pubkey::new_from_array([
-    156, 158, 161, 205, 165, 242, 171, 164,
-    248, 48, 30, 171, 12, 21, 211, 29,
-    247, 141, 190, 55, 252, 15, 139, 23,
-    129, 39, 14, 137, 77, 87, 15, 120,
+    28, 115, 118, 10, 50, 227, 159, 108,
+    57, 25, 152, 172, 33, 197, 185, 225,
+    100, 128, 212, 52, 209, 59, 192, 105,
+    27, 84, 165, 148, 199, 229, 215, 42,
 ]);
 
 #[program]
