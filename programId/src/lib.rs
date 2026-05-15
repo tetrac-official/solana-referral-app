@@ -15,7 +15,11 @@ const MIN_USDC_AMOUNT: u64 = 1_000;
 const AUTO_PROMOTE_REFERRALS: u32 = 10; // Starter → Silver at 10 referrals
 
 /// Admin key — upgrade authority, gates promote + sweep.
-/// 2v4XjdTjHK7qKEc8BkCeCWFrZmGSJv32ZGyv27zw3jc5 (Ledger)
+///
+/// Mainnet build (default): 2v4XjdTjHK7qKEc8BkCeCWFrZmGSJv32ZGyv27zw3jc5 (Ledger).
+/// Devnet build (--features devnet-admin): BYNtxb7zMereaMrmMcWCQx3G6Y1KZspnMJbiuqoh9MrF
+/// (file keypair — the existing devnet program's upgrade authority).
+#[cfg(not(feature = "devnet-admin"))]
 const ADMIN: Pubkey = Pubkey::new_from_array([
     28, 115, 118, 10, 50, 227, 159, 108,
     57, 25, 152, 172, 33, 197, 185, 225,
@@ -23,18 +27,22 @@ const ADMIN: Pubkey = Pubkey::new_from_array([
     27, 84, 165, 148, 199, 229, 215, 42,
 ]);
 
+#[cfg(feature = "devnet-admin")]
+const ADMIN: Pubkey = Pubkey::new_from_array([
+    156, 158, 161, 205, 165, 242, 171, 164,
+    248, 48, 30, 171, 12, 21, 211, 29,
+    247, 141, 190, 55, 252, 15, 139, 23,
+    129, 39, 14, 137, 77, 87, 15, 120,
+]);
+
 #[program]
 pub mod referral {
     use super::*;
 
-    /// One-time: create the global USDC vault ATA.
     pub fn initialize(_ctx: Context<Initialize>) -> Result<()> {
-        msg!("Vault initialized");
         Ok(())
     }
 
-    /// Self-register as an affiliate at the Starter tier (5%).
-    /// Affiliate pays rent (~0.002 SOL). No admin needed.
     pub fn register_affiliate(ctx: Context<RegisterAffiliate>) -> Result<()> {
         let clock = Clock::get()?;
         ctx.accounts.affiliate_config.set_inner(AffiliateConfig {
@@ -46,11 +54,6 @@ pub mod referral {
             created_at: clock.unix_timestamp,
             updated_at: clock.unix_timestamp,
         });
-        msg!(
-            "Affiliate registered: {} at {}bps",
-            ctx.accounts.affiliate.key(),
-            DEFAULT_COMMISSION_BPS
-        );
         Ok(())
     }
 
@@ -67,13 +70,6 @@ pub mod referral {
         config.tier = new_tier;
         config.commission_bps = new_bps;
         config.updated_at = Clock::get()?.unix_timestamp;
-
-        msg!(
-            "Affiliate promoted: {} → tier {} at {}bps",
-            config.affiliate,
-            new_tier,
-            new_bps
-        );
         Ok(())
     }
 
@@ -142,8 +138,7 @@ pub mod referral {
                 // Auto-promote: Starter → Silver at threshold
                 if aff_cfg.tier == 0 && aff_cfg.total_referrals >= AUTO_PROMOTE_REFERRALS {
                     aff_cfg.tier = 1;
-                    aff_cfg.commission_bps = 1000; // 10%
-                    msg!("Auto-promoted affiliate to Silver (10%)");
+                    aff_cfg.commission_bps = 1000;
                 }
 
                 (aff, mer, bps)
@@ -151,13 +146,7 @@ pub mod referral {
                 (0u64, amount, 0u64)
             };
 
-        msg!(
-            "USDC split — total: {}, merchant: {}, affiliate: {} ({}bps)",
-            amount,
-            merchant_amount,
-            affiliate_amount,
-            commission_bps
-        );
+        let _ = commission_bps;
 
         let clock = Clock::get()?;
         ctx.accounts.reference_storage.set_inner(ReferenceStorage {
@@ -269,7 +258,6 @@ pub mod referral {
                 if aff_cfg.tier == 0 && aff_cfg.total_referrals >= AUTO_PROMOTE_REFERRALS {
                     aff_cfg.tier = 1;
                     aff_cfg.commission_bps = 1000;
-                    msg!("Auto-promoted affiliate to Silver (10%)");
                 }
 
                 (aff, mer, bps)
@@ -277,13 +265,7 @@ pub mod referral {
                 (0u64, amount, 0u64)
             };
 
-        msg!(
-            "SOL split — total: {}, merchant: {}, affiliate: {} ({}bps)",
-            amount,
-            merchant_amount,
-            affiliate_amount,
-            commission_bps
-        );
+        let _ = commission_bps;
 
         let clock = Clock::get()?;
         ctx.accounts.reference_storage.set_inner(ReferenceStorage {
@@ -332,14 +314,11 @@ pub mod referral {
         Ok(())
     }
 
-    /// Admin-only: drain all USDC from the vault to a destination ATA.
     pub fn sweep(ctx: Context<Sweep>) -> Result<()> {
         require!(ctx.accounts.admin.key() == ADMIN, ErrorCode::Unauthorized);
 
         let vault_balance = ctx.accounts.program_token_account.amount;
         require!(vault_balance > 0, ErrorCode::InvalidAmount);
-
-        msg!("Sweep USDC — amount: {}", vault_balance);
 
         let bump = ctx.bumps.token_authority;
         let signer_seeds: &[&[&[u8]]] = &[&[TOKEN_AUTHORITY_SEED, &[bump]]];
@@ -358,7 +337,6 @@ pub mod referral {
         Ok(())
     }
 
-    /// Admin-only: drain excess SOL from the PDA to a destination wallet.
     pub fn sweep_sol(ctx: Context<SweepSol>) -> Result<()> {
         require!(ctx.accounts.admin.key() == ADMIN, ErrorCode::Unauthorized);
 
@@ -366,8 +344,6 @@ pub mod referral {
         let rent = Rent::get()?.minimum_balance(0);
         let available = pda_balance.saturating_sub(rent);
         require!(available > 0, ErrorCode::InvalidAmount);
-
-        msg!("Sweep SOL — amount: {}", available);
 
         let bump = ctx.bumps.token_authority;
         let signer_seeds: &[&[&[u8]]] = &[&[TOKEN_AUTHORITY_SEED, &[bump]]];
@@ -595,27 +571,27 @@ impl ReferenceStorage {
 
 #[error_code]
 pub enum ErrorCode {
-    #[msg("Arithmetic overflow occurred")]
+    #[msg("overflow")]
     ArithmeticOverflow,
-    #[msg("Invalid memo format: not valid JSON")]
+    #[msg("memo")]
     InvalidMemoFormat,
-    #[msg("Missing merchant_id in memo")]
+    #[msg("merchant_id")]
     MissingMerchantId,
-    #[msg("Invalid merchant pubkey in memo")]
+    #[msg("merchant pk")]
     InvalidMerchantPubkey,
-    #[msg("Invalid affiliate pubkey in memo")]
+    #[msg("affiliate pk")]
     InvalidAffiliatePubkey,
-    #[msg("Merchant token account owner does not match memo merchant_id")]
+    #[msg("merchant mismatch")]
     MerchantMismatch,
-    #[msg("Affiliate token account presence/owner does not match memo")]
+    #[msg("affiliate mismatch")]
     AffiliateMismatch,
-    #[msg("Amount must be greater than zero")]
+    #[msg("amount=0")]
     InvalidAmount,
-    #[msg("Amount is below the minimum threshold")]
+    #[msg("amount<min")]
     AmountBelowMinimum,
-    #[msg("Only the admin can perform this action")]
+    #[msg("unauth")]
     Unauthorized,
-    #[msg("Commission cannot exceed 2000 bps (20%)")]
+    #[msg("bps>2000")]
     CommissionTooHigh,
 }
 
@@ -679,5 +655,204 @@ fn strip_quotes(s: &str) -> Option<&str> {
         Some(&s[1..s.len() - 1])
     } else {
         None
+    }
+}
+
+// ── Tests ─────────────────────────────────────────────────────────────
+// Run with: cargo test (host target — does NOT use cargo build-sbf)
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const MERCHANT: &str = "BYNtxb7zMereaMrmMcWCQx3G6Y1KZspnMJbiuqoh9MrF";
+    const AFFILIATE: &str = "2v4XjdTjHK7qKEc8BkCeCWFrZmGSJv32ZGyv27zw3jc5";
+
+    // ── parse_and_validate_memo ──
+
+    #[test]
+    fn memo_merchant_only() {
+        let memo = format!(r#"{{"merchant_id":"{}"}}"#, MERCHANT);
+        let (m, a) = parse_and_validate_memo(&memo).unwrap();
+        assert_eq!(m.to_string(), MERCHANT);
+        assert!(a.is_none());
+    }
+
+    #[test]
+    fn memo_merchant_and_affiliate() {
+        let memo = format!(
+            r#"{{"merchant_id":"{}","affiliate_id":"{}"}}"#,
+            MERCHANT, AFFILIATE
+        );
+        let (m, a) = parse_and_validate_memo(&memo).unwrap();
+        assert_eq!(m.to_string(), MERCHANT);
+        assert_eq!(a.unwrap().to_string(), AFFILIATE);
+    }
+
+    #[test]
+    fn memo_whitespace_tolerated() {
+        let memo = format!(r#"  {{ "merchant_id" : "{}" }}  "#, MERCHANT);
+        let (m, _) = parse_and_validate_memo(&memo).unwrap();
+        assert_eq!(m.to_string(), MERCHANT);
+    }
+
+    #[test]
+    fn memo_unknown_keys_ignored() {
+        let memo = format!(
+            r#"{{"merchant_id":"{}","foo":"bar"}}"#,
+            MERCHANT
+        );
+        assert!(parse_and_validate_memo(&memo).is_ok());
+    }
+
+    #[test]
+    fn memo_rejects_no_braces() {
+        let memo = format!(r#""merchant_id":"{}""#, MERCHANT);
+        assert!(parse_and_validate_memo(&memo).is_err());
+    }
+
+    #[test]
+    fn memo_rejects_missing_merchant() {
+        let memo = format!(r#"{{"affiliate_id":"{}"}}"#, AFFILIATE);
+        assert!(parse_and_validate_memo(&memo).is_err());
+    }
+
+    #[test]
+    fn memo_rejects_bad_merchant_pubkey() {
+        let memo = r#"{"merchant_id":"not_a_pubkey"}"#;
+        assert!(parse_and_validate_memo(memo).is_err());
+    }
+
+    #[test]
+    fn memo_rejects_bad_affiliate_pubkey() {
+        let memo = format!(
+            r#"{{"merchant_id":"{}","affiliate_id":"x"}}"#,
+            MERCHANT
+        );
+        assert!(parse_and_validate_memo(&memo).is_err());
+    }
+
+    #[test]
+    fn memo_rejects_unquoted_value() {
+        let memo = format!(r#"{{"merchant_id":{}}}"#, MERCHANT);
+        assert!(parse_and_validate_memo(&memo).is_err());
+    }
+
+    #[test]
+    fn memo_rejects_value_with_comma_injection() {
+        let memo = r#"{"merchant_id":"abc,def"}"#;
+        assert!(parse_and_validate_memo(memo).is_err());
+    }
+
+    #[test]
+    fn memo_rejects_no_colon() {
+        let memo = r#"{"merchant_id" "value"}"#;
+        assert!(parse_and_validate_memo(memo).is_err());
+    }
+
+    // ── strip_quotes ──
+
+    #[test]
+    fn strip_quotes_basic() {
+        assert_eq!(strip_quotes("\"hi\""), Some("hi"));
+    }
+
+    #[test]
+    fn strip_quotes_empty_quoted() {
+        assert_eq!(strip_quotes("\"\""), Some(""));
+    }
+
+    #[test]
+    fn strip_quotes_rejects_unquoted() {
+        assert_eq!(strip_quotes("hi"), None);
+        assert_eq!(strip_quotes("\"hi"), None);
+        assert_eq!(strip_quotes("hi\""), None);
+    }
+
+    // ── commission math (BPS) ──
+
+    fn split(amount: u64, bps: u64) -> Option<(u64, u64)> {
+        let aff = amount.checked_mul(bps)?.checked_div(BPS_DENOMINATOR)?;
+        let mer = amount.checked_sub(aff)?;
+        Some((aff, mer))
+    }
+
+    #[test]
+    fn split_5pct_of_1000() {
+        let (aff, mer) = split(1000, 500).unwrap();
+        assert_eq!(aff, 50);
+        assert_eq!(mer, 950);
+    }
+
+    #[test]
+    fn split_10pct_of_1_000_000() {
+        let (aff, mer) = split(1_000_000, 1000).unwrap();
+        assert_eq!(aff, 100_000);
+        assert_eq!(mer, 900_000);
+    }
+
+    #[test]
+    fn split_15pct_of_min_lamports() {
+        // 1000 lamports × 1500bps / 10000 = 150
+        let (aff, mer) = split(1000, 1500).unwrap();
+        assert_eq!(aff, 150);
+        assert_eq!(mer, 850);
+        assert_eq!(aff + mer, 1000);
+    }
+
+    #[test]
+    fn split_max_bps_2000() {
+        let (aff, mer) = split(10_000, MAX_COMMISSION_BPS as u64).unwrap();
+        assert_eq!(aff, 2000);
+        assert_eq!(mer, 8000);
+    }
+
+    #[test]
+    fn split_zero_bps_pays_merchant_full() {
+        let (aff, mer) = split(1_000_000, 0).unwrap();
+        assert_eq!(aff, 0);
+        assert_eq!(mer, 1_000_000);
+    }
+
+    #[test]
+    fn split_rounds_down_dust_to_merchant() {
+        // 999 × 500 / 10000 = 49.95 → 49 to affiliate, 950 to merchant
+        let (aff, mer) = split(999, 500).unwrap();
+        assert_eq!(aff, 49);
+        assert_eq!(mer, 950);
+        assert_eq!(aff + mer, 999);
+    }
+
+    #[test]
+    fn split_overflow_caught() {
+        // u64::MAX × 500 overflows checked_mul
+        assert!(split(u64::MAX, 500).is_none());
+    }
+
+    // ── constants ──
+
+    #[test]
+    fn constants_match_spec() {
+        assert_eq!(DEFAULT_COMMISSION_BPS, 500);
+        assert_eq!(MAX_COMMISSION_BPS, 2000);
+        assert_eq!(BPS_DENOMINATOR, 10_000);
+        assert_eq!(MIN_SOL_LAMPORTS, 1_000);
+        assert_eq!(MIN_USDC_AMOUNT, 1_000);
+        assert_eq!(AUTO_PROMOTE_REFERRALS, 10);
+    }
+
+    // ── account sizes ──
+
+    #[test]
+    fn affiliate_config_space_matches_layout() {
+        // 8 (discriminator) + 32 (pubkey) + 2 (bps) + 1 (tier)
+        // + 4 (referrals) + 8 (volume) + 8 (created) + 8 (updated) = 71
+        assert_eq!(AffiliateConfig::SPACE, 71);
+    }
+
+    #[test]
+    fn reference_storage_space_matches_layout() {
+        // 8 + 32 + 1 (option discriminant) + 32 + 8 + 8 + 32 = 121
+        assert_eq!(ReferenceStorage::SPACE, 121);
     }
 }
